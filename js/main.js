@@ -69,6 +69,77 @@
     });
   }
 
+  /* ---------- Wire colours ------------------------------------------------
+     SINGLE PLACE TO EDIT. `name` shows in the card + cart; `use` is the short
+     wiring-convention hint. These follow the traditional Indian colour code
+     (R-Y-B phases, black neutral, green earth) — confirm against the colours
+     CS Cables actually manufactures before relying on it commercially.        */
+  const WIRE_COLOURS = [
+    { id: 'red',    name: 'Red',    hex: '#C62828', use: 'Phase / live' },
+    { id: 'yellow', name: 'Yellow', hex: '#F2C200', use: 'Phase (Y)' },
+    { id: 'blue',   name: 'Blue',   hex: '#1565C0', use: 'Phase (B)' },
+    { id: 'black',  name: 'Black',  hex: '#1E1E1E', use: 'Neutral' },
+    { id: 'green',  name: 'Green',  hex: '#2E7D32', use: 'Earth' },
+    { id: 'white',  name: 'White',  hex: '#F7F7F5', use: 'Neutral / general' },
+    { id: 'grey',   name: 'Grey',   hex: '#9E9E9E', use: 'Spare / control' }
+  ];
+  const DEFAULT_COLOUR = 'red';
+
+  /* Colour applies to single-core wire only. Those cards composite a series
+     logo via .product-figure.blend; sheathed industrial cables do not. */
+  function isColourable(card) { return !!card.querySelector('.product-figure.blend'); }
+
+  function colourLine(c) {
+    return '<b>' + c.name + '</b> <span class="swatch-use">— ' + c.use + '</span>';
+  }
+
+  function initColourPickers() {
+    $$('.product-card').forEach(card => {
+      if (!isColourable(card) || card.querySelector('.color-picker')) return;
+      const info = card.querySelector('.product-info');
+      const meta = card.querySelector('.product-meta');
+      if (!info || !meta) return;
+
+      const picker = document.createElement('div');
+      picker.className = 'color-picker';
+      picker.setAttribute('role', 'radiogroup');
+      picker.setAttribute('aria-label', 'Choose wire colour');
+      picker.innerHTML = WIRE_COLOURS.map(c =>
+        '<button type="button" class="swatch' + (c.id === DEFAULT_COLOUR ? ' is-selected' : '') + '"' +
+        ' data-colour="' + c.id + '" data-name="' + c.name + '" data-use="' + c.use + '"' +
+        ' style="--sw:' + c.hex + '" role="radio" aria-checked="' + (c.id === DEFAULT_COLOUR) + '"' +
+        ' title="' + c.name + ' — ' + c.use + '" aria-label="' + c.name + ' — ' + c.use + '"></button>'
+      ).join('');
+
+      const chosen = document.createElement('p');
+      chosen.className = 'color-chosen';
+      chosen.innerHTML = colourLine(WIRE_COLOURS.find(c => c.id === DEFAULT_COLOUR));
+
+      info.insertBefore(picker, meta);
+      info.insertBefore(chosen, meta);
+    });
+  }
+
+  // Delegated so cloned carousel cards work too.
+  document.addEventListener('click', (e) => {
+    const sw = e.target.closest('.swatch');
+    if (!sw) return;
+    const picker = sw.closest('.color-picker');
+    const card = sw.closest('.product-card');
+    if (!picker || !card) return;
+    $$('.swatch', picker).forEach(s => {
+      s.classList.toggle('is-selected', s === sw);
+      s.setAttribute('aria-checked', String(s === sw));
+    });
+    const chosen = card.querySelector('.color-chosen');
+    if (chosen) chosen.innerHTML = '<b>' + sw.dataset.name + '</b> <span class="swatch-use">— ' + sw.dataset.use + '</span>';
+  });
+
+  function selectedColour(card) {
+    const sw = card && card.querySelector('.swatch.is-selected');
+    return sw ? { id: sw.dataset.colour, name: sw.dataset.name } : null;
+  }
+
   /* ---------- Header scroll state ---------- */
   function initHeader() {
     const header = $('.site-header');
@@ -339,9 +410,11 @@
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-add]');
       if (!btn) return;
+      // Colour is part of the SKU: each colour is its own cart line.
+      const colour = selectedColour(btn.closest('.product-card'));
       Cart.add({
-        id: btn.dataset.add,
-        name: btn.dataset.name,
+        id: btn.dataset.add + (colour ? '__' + colour.id : ''),
+        name: btn.dataset.name + (colour ? ' — ' + colour.name : ''),
         price: parseInt(btn.dataset.price, 10) || 0,
         img: btn.dataset.img
       });
@@ -350,7 +423,7 @@
       const original = label ? label.textContent : null;
       if (label) label.textContent = 'Added';
       setTimeout(() => { btn.classList.remove('added'); if (label && original) label.textContent = original; }, 1400);
-      toast(btn.dataset.name + ' added to cart');
+      toast(btn.dataset.name + (colour ? ' — ' + colour.name : '') + ' added to cart');
     });
 
     // Drawer controls
@@ -422,6 +495,7 @@
   /* ---------- Boot ---------- */
   function boot() {
     decoratePrices();   // must run before the carousel clones cards
+    initColourPickers(); // ditto — clones must inherit the swatches
     initHeader();
     initNav();
     initReveal();

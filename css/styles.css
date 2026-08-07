@@ -321,6 +321,18 @@ p { margin: 0; }
 .price-off { background: var(--red-tint); color: var(--red); font-weight: 800; font-size: 0.62rem; letter-spacing: 0.03em; padding: 0.14em 0.46em; border-radius: 5px; white-space: nowrap; }
 .series-price .price-was { font-size: 0.85em; margin-right: 0.25em; }
 .series-price .price-off { margin-left: 0.4em; }
+/* ---------- Wire colour picker (single-core cards) ---------- */
+.color-picker { display: flex; flex-wrap: wrap; gap: 0.42rem; margin-top: 0.15rem; }
+.swatch { width: 23px; height: 23px; padding: 0; border-radius: 50%; background: var(--sw);
+          border: 1.5px solid oklch(0 0 0 / 0.20); cursor: pointer; flex-shrink: 0;
+          transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+.swatch:hover { transform: scale(1.14); }
+.swatch:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.swatch.is-selected { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--blue); }
+.color-chosen { font-size: 0.78rem; color: var(--ink-soft); line-height: 1.35; margin-top: 0.1rem; }
+.color-chosen b { color: var(--ink); font-weight: 700; }
+.color-chosen .swatch-use { color: var(--ink-soft); }
+
 .add-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6em 1em; border-radius: 999px; background: var(--blue-tint); color: var(--blue); font-weight: 700; font-size: 0.8rem; transition: background 0.3s, color 0.3s, transform 0.35s var(--ease); flex-shrink: 0; }
 .add-btn:hover { background: var(--blue); color: #fff; transform: translateY(-2px); }
 .add-btn.added { background: var(--ok); color: #fff; }
